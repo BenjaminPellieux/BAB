@@ -9,6 +9,11 @@
 #include <math.h>
 #include <stdint.h>
 
+
+#define MIC_PIN 34 //mic
+#define BUTTON_PIN 21
+#define PI 3,14
+#define POT_PIN 12
 #define DATA_PIN 4 //Pin de controle des LEDS
 #define NUM_LEDS 256 // Nombre de LEDS
 #define VAL_MID 250 // 

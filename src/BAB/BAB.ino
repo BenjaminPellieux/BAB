@@ -1,15 +1,5 @@
 #include "model.hpp"
 
-#define MIC_PIN 34 //mic
-#define DATA_PIN 4 //led
-#define BUTTON_PIN 21
-#define VAL_MID 250
-#define PI 3,14
-#define SIZE_TAB 16
-#define POT_PIN 12
-#define SIZE_HALF_TAB 8
-
-
 
 int delay_int = 100;
 uint16_t lum_max = 10; 
