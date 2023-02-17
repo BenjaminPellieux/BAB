@@ -1,21 +1,24 @@
 
-#include "micro.hpp"
+#include "model.hpp"
 
 // #if !(USING_DEFAULT_ARDUINO_LOOP_STACK_SIZE)
 //   //uint16_t USER_CONFIG_ARDUINO_LOOP_STACK_SIZE = 16384;
 //   uint16_t USER_CONFIG_ARDUINO_LOOP_STACK_SIZE = 8192;
 // #endif
 
-void Microphone::setup_mic(){ 
+
+Microphone::Microphone(){
   pinMode(22, INPUT);
-  i2s_driver_install(this.i2s_num, &this.i2s_config, 0, NULL);   //install and start i2s driver
-  REG_SET_BIT(  I2S_TIMING_REG(this.i2s_num),BIT(9));   /*  #include "soc/i2s_reg.h"   I2S_NUM -> 0 or 1*/
-  REG_SET_BIT( I2S_CONF_REG(this.i2s_num), I2S_RX_MSB_SHIFT);
-  i2s_set_pin(this.i2s_num, &this.pin_config);
+  i2s_driver_install(i2s_num, &i2s_config, 0, NULL);   //install and start i2s driver
+  REG_SET_BIT(  I2S_TIMING_REG(i2s_num),BIT(9));   /*  #include "soc/i2s_reg.h"   I2S_NUM -> 0 or 1*/
+  REG_SET_BIT( I2S_CONF_REG(i2s_num), I2S_RX_MSB_SHIFT);
+  i2s_set_pin( i2s_num, &pin_config);
+
 }
 
+
 void Microphone::get_val_mic(){
-  int bytes_read = i2s_read(this.i2s_num, this.audio_buf, sizeof(this->audio_buf), &this.size, portMAX_DELAY);
+  int bytes_read = i2s_read(i2s_num, this->audio_buf, sizeof(this->audio_buf), &this->size, portMAX_DELAY);
   int32_t cleanBuf[BUFLEN / 2] {0};
   int cleanBufIdx = 0;
   for (int i = 0; i < BUFLEN; i++)
@@ -49,8 +52,8 @@ void Microphone::get_val_mic(){
     minsample = _min(minsample, cleanBuf[i]);
     maxsample = _max(maxsample, cleanBuf[i]);
   }
-  this.value_audio = maxsample - minsample;
-  this.dB_audio = log(this->value_audio / a)/b;
+  this->value_audio = maxsample - minsample;
+  this->dB_audio = log(this->value_audio / a)/b;
 }
     
 

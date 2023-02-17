@@ -1,11 +1,15 @@
 
-#include "vue.hpp"
+#include "model.hpp"
+#include "matrice.cpp"
 
 
-#define SIZE_HALF_TAB 8
+Vue::Vue(){
+
+  FastLED.addLeds<WS2811, DATA_PIN, RGB>(leds, NUM_LEDS);
+}
 
 
-void Vue::display_smiley(int db_value){
+void Vue::display_smiley(int dB_value,uint16_t lum_max){
   if (dB_value < this->tab_dB_value[0]) {
 
     for (int i = 0; i < NUM_LEDS / 2; i++) {
@@ -32,8 +36,8 @@ void Vue::display_smiley(int db_value){
 
 
 
-void Vue::display_menu_gauge(uint8_t gauge_nbr, int state_nbr, uint8_t cursor_line, int selected_line, bool selected_bool, float val_gauge){
-  this.count_for_selected++;
+void Vue::display_menu_gauge(uint8_t gauge_nbr, int state_nbr, uint8_t cursor_line, int selected_line, bool selected_bool, float val_gauge, uint16_t lum_max, int noise_thr){
+  this->count_for_selected++;
   int r = 0;
   int g = 0;
   if (count_for_selected > 314) {
@@ -70,19 +74,19 @@ void Vue::display_menu_gauge(uint8_t gauge_nbr, int state_nbr, uint8_t cursor_li
       leds[(i * SIZE_TAB) + j] = CRGB(0, 0, 0);
     }
   } 
-  for (int j = noise_thr; j < loud_thr; j++) { 
+  for (int j = noise_thr; j < 200; j++) { 
     leds[(14 * SIZE_TAB) + j] = CRGB(0, lum_max, 0);
   }
   for (int j = 0; j < SIZE_TAB; j++) { //to replace buy a float if not working 
-    r = sin(((j * 20) + this.count_for_selected) / 16) * lum_max;
-    g = lum_max - (sin(((j * 20) + this.count_for_selected) / 16) * lum_max);
+    r = sin(((j * 20) + this->count_for_selected) / 16) * lum_max;
+    g = lum_max - (sin(((j * 20) + this->count_for_selected) / 16) * lum_max);
     leds[(15 * SIZE_TAB) + j] = CRGB(r, g, 0);
   }
   FastLED.show(); 
 }
 
 
-void Vue::display_amplitude(){
+void Vue::display_amplitude(uint16_t lum_max){
   uint8_t r = 0;
   uint8_t g = 0;
   uint8_t used_j = 0;

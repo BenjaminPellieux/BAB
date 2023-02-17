@@ -1,7 +1,4 @@
-#include <FastLED.h>
-#include "micro.cpp"
-#include "matrice.cpp"
-#include "vue.cpp"
+#include "model.hpp"
 
 #define MIC_PIN 34 //mic
 #define DATA_PIN 4 //led
@@ -10,8 +7,6 @@
 #define PI 3,14
 #define SIZE_TAB 16
 #define POT_PIN 12
-
-
 #define SIZE_HALF_TAB 8
 
 
@@ -22,8 +17,9 @@ float pot_val = 0;
 int button_rise_bool = 0;
 int noise_thr = 15000;
 int state = 0;
-int loud_thr = 200;
 
+//Vue matrice_led = new Vue();
+//Microphone microphone = new Microphone();
 
 Vue matrice_led;
 Microphone microphone;
@@ -112,7 +108,7 @@ void menu()
           break;
       }
     }
-    display_menu_gauge(gauge_nbr, state_nbr, cursor_line * 2, selected_line, selected_bool, analog_val);
+    matrice_led.display_menu_gauge(gauge_nbr, state_nbr, cursor_line * 2, selected_line, selected_bool, analog_val,lum_max, noise_thr);
     usleep(delay_int);
   }
 }
@@ -137,23 +133,23 @@ void loop()
   int button_val = digitalRead(BUTTON_PIN); //to replace with interrupt 
 
   if (!button_val) {
-    state = BUTTON_HIGH;
+    state = LEDISPLAY::MENU ;
     //Serial.println("Button pressed 1");
   }
   
   microphone.get_val_mic(); //get noise volume
 
   switch(state) {
-    case DISPLAY.HIGH:
-      matrice_led.menu(); //get state value choosen by user
+    case LEDISPLAY::MENU:
+      menu(); //get state value choosen by user
     break;
 
-    case DISPLAY.SMILEY:
-      matrice_led.display_smiley(microphone.dB_audio);
+    case LEDISPLAY::SMILEY:
+      matrice_led.display_smiley(microphone.dB_audio,lum_max);
     break;
-    case DISPLAY.GAUGE:
+    case LEDISPLAY::GAUGE:
       matrice_led.fill_tab(microphone.dB_audio);
-      matrice_led.display_amplitude();
+      matrice_led.display_amplitude(lum_max);
     break;
 
     default:

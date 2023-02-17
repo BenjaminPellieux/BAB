@@ -1,6 +1,5 @@
-#include <stdint.h>
-#define NUM_LEDS 256
 
+#include "model.hpp"
 
 // matrice d'affichage des yeux ouvert
 const uint8_t tab_eyes_open[NUM_LEDS / 2] = {0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
