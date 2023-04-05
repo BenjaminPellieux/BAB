@@ -131,18 +131,22 @@ void loop()
 
   switch(state) {
     case LEDISPLAY::MENU:
+      Serial.print("MENU::");
+      Serial.println(state);
       menu(); //get state value choosen by user
     break;
 
     case LEDISPLAY::SMILEY:
+      Serial.print("SMILEY::");
+      Serial.println(state);
       matrice_led.display_smiley(microphone.dB_audio,lum_max);
     break;
+    
     case LEDISPLAY::GAUGE:
-      matrice_led.fill_tab(microphone.dB_audio);
+      Serial.print("GAUGE::");
+      Serial.println(state);
+      matrice_led.fill_tab(microphone.value_audio);
       matrice_led.display_amplitude(lum_max);
-    break;
-
-    default:
     break;
   }
   usleep(delay_int);

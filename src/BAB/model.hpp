@@ -19,8 +19,8 @@
 #define VAL_MID 250 // 
 #define SIZE_TAB 16 // Nombre de les par Ligne / Colone
 #define BUFLEN 256 // Buffer for audio signial
-#define a 3.00786665 // coeficient a de la fonction a.e^bx
-#define b 0.0781188 // coeficient b de la fonction a.e^bx
+#define A 3.00786665 // coeficient a de la fonction a.e^bx
+#define B 0.0781188 // coeficient b de la fonction a.e^bx
 #define SIZE_HALF_TAB 8
 #define NB_PALIER 3// nombre de palier pour le smiley
 
@@ -65,6 +65,7 @@ class Microphone{
     float dB_audio;
 
     Microphone();
+    ~Microphone();
     void get_val_mic();
 };
 
@@ -72,25 +73,23 @@ class Microphone{
 class Vue{
 
   private:
-    uint8_t tab_mem[NUM_LEDS][NUM_LEDS];
+  
+    uint8_t tab_mem[SIZE_TAB][SIZE_TAB] = {{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}};
     CRGB leds[NUM_LEDS];
-    int tab_dB_value[NB_PALIER] = {30,60,90}; 
+    float tab_dB_value[NB_PALIER] = {30,60,90}; 
     int count_for_selected = 0;
-
-    
-
 
   public:
 
     // Affichage des smiley en fonction volume actuel
-
     //------------------------------------------------------------//
 
     // METHODE pour l'IHM
     Vue();
-    void display_smiley(int db_value,uint16_t lum_max);
+    ~Vue();
+    void display_smiley(float db_value,uint16_t lum_max);
     void display_menu_gauge(uint8_t gauge_nbr, int state_nbr, uint8_t cursor_line, int selected_line, bool selected_bool, float val_gauge, uint16_t lum_max, int noise_thr);
-    void fill_tab(int dB_value);
+    void fill_tab(int value_audio);
     void display_amplitude(uint16_t lum_max);
 
 };
