@@ -106,4 +106,3 @@ int mic_get_val() {
     return (maxsample - minsample);
 }
 
-

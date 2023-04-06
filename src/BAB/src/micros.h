@@ -37,4 +37,3 @@
 void setup_mic();
 int mic_get_val();
 //void show_audio();
-
