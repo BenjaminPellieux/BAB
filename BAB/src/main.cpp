@@ -37,7 +37,7 @@ int count_for_selected = 0;
 
 uint8_t tab_mem[NUM_LEDS][NUM_LEDS];
 CRGB leds[NUM_LEDS];
-
+Microphone micro;
 //------------------------------------------------------------//
 
 void setup() {
@@ -46,7 +46,7 @@ void setup() {
   pinMode(POT_PIN, INPUT);
   Serial.begin(9600);
   FastLED.addLeds<WS2811, DATA_PIN, RGB>(leds, NUM_LEDS);
-  setup_mic();
+  micro.setup_mic();
   //attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), interrupt_button, RISING);
 }
 
@@ -54,7 +54,7 @@ void setup() {
 
 
 // Affichage des smiley en fonction volume actuel
-void display_smiley()
+void display_smiley(int val_final)
 {
   if (val_final < noise_thr) {
 
@@ -85,7 +85,7 @@ void display_smiley()
 
 
 // remplissage de la matrice de led 
-void fill_tab()
+void fill_tab(int val_final)
 {
 
   int buf_case;
@@ -109,7 +109,6 @@ void fill_tab()
       } else {
         buf_line[j] = tab_mem[i][j];
         if (j < (val_final * SIZE_TAB) / 1024) {
-          //Serial.println((val_final * SIZE_TAB) / 1024);
           tab_mem[i][j] = 1;
         } else {
           tab_mem[i][j] = 0;
@@ -172,11 +171,11 @@ void loop()
     //Serial.println("Button pressed 1");
   }
   
-  val_final = mic_get_val(); //get noise volume
+  micro.mic_get_val(); //get noise volume
   if (state){
-    display_smiley();
+    display_smiley(micro.audio_value);
   }else{
-    fill_tab();
+    fill_tab(micro.audio_value);
     display_gauge();
   }
   usleep(delay_int);

@@ -32,8 +32,47 @@
 #include <Arduino.h>
 #include <driver/i2s.h>
 #include "soc/i2s_reg.h"
+#include <math.h>
+
+#define a 3.00786665 // coeficient a de la fonction a.e^bx
+#define b 0.0781188 // coeficient b de la fonction a.e^bx
 
 
-void setup_mic();
-int mic_get_val();
-//void show_audio();
+static const i2s_config_t i2s_config = {
+     .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
+     .sample_rate = 22050,
+     .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
+     .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+     .communication_format = (i2s_comm_format_t)(I2S_COMM_FORMAT_STAND_I2S),
+     .intr_alloc_flags = 0, // default interrupt priority
+     .dma_buf_count = 8,
+     .dma_buf_len = 64,
+     .use_apll = false
+};
+
+// For Adafruit Huzzah Esp32
+
+static const i2s_pin_config_t pin_config = {
+    .bck_io_num = 26,                   // BCKL
+    .ws_io_num = 25,                    // LRCL
+    .data_out_num = I2S_PIN_NO_CHANGE,  // not used (only for speakers)
+    .data_in_num = 33,                   // DOUT
+};
+
+
+class Microphone{
+    private:
+                
+        size_t size;
+        static const i2s_port_t i2s_num = I2S_NUM_0; // i2s port number
+        int32_t audio_buf[BUFLEN];
+
+    public:
+        int audio_value;
+        float dB_audio;
+
+        void setup_mic();
+        void mic_get_val();
+        float get_dB_value();
+
+};
