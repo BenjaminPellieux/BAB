@@ -10,40 +10,20 @@
 #define BUTTON_PIN 21
 #define VAL_MID 256
 #define SIZE_TAB 16
-#define POT_PIN 12
-
-#define DISPLAY_GAUGE 2
-#define DISPLAY_SMILEY 1
-#define BUTTON_HIGH 0
 #define SIZE_HALF_TAB 8
+#define DELAY 300
+#define LUM_MAX 50
 
-int delay_int = 300;
-uint16_t lum_max = 10;
-uint16_t min_mic = 1024;
-uint8_t button_state = 0; 
-uint8_t first_run = 1;
-uint8_t button_old = 0;
-float pot_val = 0;
-int val_final = 100;
-int button_rise_bool = 0;
-int noise_thr = 15000;
-int state = 0;
-int loud_thr = 200;
-int count_for_selected = 0;
-
-
-
-
-
-uint8_t tab_mem[NUM_LEDS][NUM_LEDS];
+bool state = 0;
+uint8_t tab_mem[SIZE_TAB][SIZE_TAB];
 CRGB leds[NUM_LEDS];
 Microphone micro;
+
 //------------------------------------------------------------//
 
 void setup() {
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   pinMode(MIC_PIN, INPUT);
-  pinMode(POT_PIN, INPUT);
   Serial.begin(9600);
   FastLED.addLeds<WS2811, DATA_PIN, RGB>(leds, NUM_LEDS);
   micro.setup_mic();
@@ -53,32 +33,41 @@ void setup() {
 //------------------------------------------------------------//
 
 
+
+uint8_t calc_dB_level(Microphone* micro){
+  uint32_t buffer = 0;
+  uint8_t buffer_size = 100;
+  for(int i = 0; i != buffer_size; i++){
+    micro->mic_get_val();
+    buffer += micro->audio_value;
+  }
+  
+  return micro->get_dB_value(buffer / buffer_size);
+}
+
 // Affichage des smiley en fonction volume actuel
-void display_smiley(int val_final)
+// threshold Smiley 
+// Happy: dB < 60 : 0 
+// Close: dB < 100 : 1
+// Angry: else   : 2
+// Color RBG: 0 -> LUM_MAX :: 0 -> 120 (dB)
+
+
+void display_smiley(uint8_t dB_val)
 {
-  if (val_final < noise_thr) {
+  // smiley is 0 if db_val-70 < 0 else 1 + int(dB_val / 100)
+  uint8_t smiley = ((dB_val-70) < 0) ? 0 : 1 + (dB_val / 100);
+  uint8_t r = dB_val * LUM_MAX / 120; // from 0 to LUM_MAX
+  uint8_t g = LUM_MAX - dB_val * LUM_MAX / 120; // from LUM_MAX to 0  
 
-    for (int i = 0; i < NUM_LEDS / 2; i++){
-      leds[i] = CRGB(lum_max * tab_eyes_open[i], 0, 0);
-      leds[i + NUM_LEDS / 2] = CRGB(lum_max * tab_mouth_happy[i], 0, 0);
-
-    }
-  } else if ((val_final > noise_thr) && (val_final < loud_thr)) {
-    
-    for (int i = 0; i < NUM_LEDS / 2; i++){
-      leds[i] = CRGB(lum_max * tab_eyes_close[i] / 2, lum_max * tab_eyes_close[i], 0);
-      leds[i + NUM_LEDS / 2] = CRGB(lum_max * tab_mouth_ok[i] / 2, lum_max * tab_mouth_ok[i], 0);
-    }
-  } else { 
-
-    for (int i = 0; i < NUM_LEDS / 2; i++){
-      leds[i] = CRGB(0, lum_max * tab_eyes_x[i], 0);
-      leds[i + NUM_LEDS / 2] = CRGB(0, lum_max * tab_mouth_bad[i], 0);
-    }
+  for(uint8_t i = 0; i != MID_NUM_LED; i++  ){
+    bool led  = tab_eyes[smiley][i];
+    leds[i] = CRGB(g * led, r * led, 0);
+    led  = tab_mouth[smiley][i];
+    leds[i + MID_NUM_LED] = CRGB(g * led, r * led, 0);
 
   }
   FastLED.show();  
-  usleep(10000);  
 }
 
 //------------------------------------------------------------//
@@ -90,14 +79,7 @@ void fill_tab(int val_final)
 
   int buf_case;
   int buf_line[SIZE_TAB];
-  
-  // Echele de valeur de val_final
-  // 30 bd  20/ 40 
-  // 50 dB 100/ 200
-  // 60 dB 200/ 400
-  // 70 dB 500/ 1000
-  // 80 dB 1000/ 2000
-  // 90 dB 2000/ 5000
+
   //Serial.print("DEBUG: ");Serial.print(val_final);  
   for (int i = 0; i <  SIZE_TAB; i++) {
     for (int j = 0; j < SIZE_TAB; j++) {
@@ -118,18 +100,7 @@ void fill_tab(int val_final)
   }
 }  
 
-//------------------------------------------------------------//
-// affichage du menu de parametrage
-// Parametre: //////////////////////:::
-// uint8_t gauge_nbr:  nombre de gauge
-// int state:  etat de la gauge
-// uint8_t cursor_line: position du cursor 
-// int selected_line:  numero de la gauge selectionner
-// bool selected_bool : selectioner ou en attente
-// float val_gauge: valeur du potentiometre
 
-
-// menu de configuration
 
 // fonction d'affchage des jauges 
 void display_gauge()
@@ -145,8 +116,8 @@ void display_gauge()
         used_j = j;
       }
       if (tab_mem[i][used_j]) {
-        r = (lum_max * j) / SIZE_TAB;
-        g = (lum_max * (16 - j)) / SIZE_TAB;
+        r = (LUM_MAX * j) / SIZE_TAB;
+        g = (LUM_MAX * (16 - j)) / SIZE_TAB;
       } else {
         r = 0;
         g = 0;
@@ -164,20 +135,18 @@ void display_gauge()
 
 void loop()
 {
-   //to replace with interrupt 
-
+  
   if (!digitalRead(BUTTON_PIN)) {
     state = !state;
-    //Serial.println("Button pressed 1");
   }
-  
-  micro.mic_get_val(); //get noise volume
+
   if (state){
-    display_smiley(micro.audio_value);
+    display_smiley(calc_dB_level(&micro));
   }else{
+    micro.mic_get_val();
     fill_tab(micro.audio_value);
     display_gauge();
   }
-  usleep(delay_int);
+  usleep(DELAY);
 
 }

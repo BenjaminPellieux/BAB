@@ -18,9 +18,6 @@
 // }
 
 
-
-
-
 void Microphone::setup_mic(){
   pinMode(22, INPUT);
   i2s_driver_install(i2s_num, &i2s_config, 0, NULL);   //install and start i2s driver
@@ -72,6 +69,6 @@ void Microphone::mic_get_val() {
     audio_value = (maxsample - minsample);
 }
 
-float Microphone::get_dB_value(){
-  return log(audio_value / a)/b;
+float Microphone::get_dB_value(int value){
+  return log(value / a)/b;
 }
