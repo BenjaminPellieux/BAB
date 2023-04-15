@@ -6,7 +6,7 @@
 // 0: Eyes open
 // 1: Eyes Close
 // 2: Eyes cross
-const uint8_t tab_eyes[3][MID_NUM_LED] = {
+const bool tab_eyes[3][MID_NUM_LED] = {
                                     {0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
                                        0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
                                        0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
