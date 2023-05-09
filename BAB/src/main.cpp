@@ -1,5 +1,9 @@
 
-
+// TODO: 
+// - Rotation des gauge 
+// - refactoring fonction display_gauge
+// - Interrupt button pin 
+ 
 #include <FastLED.h>
 #include "micros.h"
 #include "matrice.cpp"
@@ -36,6 +40,26 @@ void setup() {
 
 
 
+
+static void quick_sort(uint16_t* array, uint8_t array_size){
+  bool flag;
+  uint16_t tmp;
+
+  do{// sort all samples using quick short as the sample size is small
+    flag = 0;
+    for(uint8_t k = 0; k != array_size; k++){
+      if (array[k] > array[k + 1]){
+        tmp = array[k + 1];
+        array[k + 1] = array[k];
+        array[k] = tmp;
+        flag = 1;
+      }
+    }
+  }while(flag);
+
+}
+
+
 /*
 @ Function: calc_dB_median
 This function calculates the avarage of a sample of a size pass as a parameter
@@ -49,8 +73,8 @@ This function calculates the avarage of a sample of a size pass as a parameter
 static uint8_t calc_dB_average(Microphone* micro,uint8_t sample_size){
   uint32_t sample = 0;
   for(int i = 0; i != sample_size; i++){
-    micro->mic_get_val();
-    sample += micro->audio_value;
+    
+    sample += micro->mic_get_val();
   }
   return micro->get_dB_value(sample / sample_size);
 }
@@ -65,31 +89,18 @@ This function calculates the median of a sample of a size pass as a parameter
 @ Date:  15/04/23
 @ State:  Done 
 */
-
 static uint8_t calc_dB_median(Microphone* micro,uint8_t sample_size){
   uint16_t *sample = (uint16_t*) malloc(sizeof(uint16_t) * sample_size);
   if (!sample){ // Check of thin provisioning exit if failure
     EXIT_FAILURE; 
   }
-  bool flag;
-  uint16_t tmp;
+
   for(int i = 0; i != sample_size; i++){// Collect all samples in a tab 
-    micro->mic_get_val();
-    sample[i] = micro->audio_value;
+    sample[i] = micro->mic_get_val();
   }
   
-  do{// short all samples using quick short as the sample size is small
-    flag = 0;
-    for(uint8_t k = 0; k != sample_size; k++){
-      if (sample[k] > sample[k + 1]){
-        tmp = sample[k + 1];
-        sample[k + 1] = sample[k];
-        sample[k] = tmp;
-        flag = 1;
-      }
-    }
+  quick_sort(sample, sample_size);
 
-  }while(flag);
   uint8_t dB_value = micro->get_dB_value(sample[(int) (sample_size / 2)] / sample_size);
   free(sample); // Free the memory of the sample tab
   return dB_value;
@@ -131,6 +142,7 @@ void display_smiley(uint8_t dB_val)
 // remplissage de la matrice de led 
 void fill_tab(uint8_t dB_val)
 {
+  Serial.print("DEBUG: dB_val: ");Serial.println(dB_val);
   bool buf_case;
   bool buf_line[SIZE_TAB] = {0};
   
@@ -143,7 +155,7 @@ void fill_tab(uint8_t dB_val)
         buf_line[j] = buf_case;
       } else {
         buf_line[j] = tab_mem[i][j];
-        if (j < (dB_val * SIZE_TAB) / dB_MAX) {
+        if ((dB_val < dB_MAX) && (j < (dB_val * SIZE_TAB) / dB_MAX)) {
           tab_mem[i][j] = 1;
         } else {
           tab_mem[i][j] = 0;
@@ -199,5 +211,4 @@ void loop()
     display_gauge();
   }
   usleep(delay_val);
-
 }

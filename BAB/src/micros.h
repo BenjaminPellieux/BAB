@@ -62,17 +62,13 @@ static const i2s_pin_config_t pin_config = {
 
 class Microphone{
     private:
-                
-        size_t size;
+            
         static const i2s_port_t i2s_num = I2S_NUM_0; // i2s port number
-        int32_t audio_buf[BUFLEN];
 
     public:
-        int audio_value;
-        float dB_audio;
 
         void setup_mic();
-        void mic_get_val();
+        uint16_t mic_get_val();
         float get_dB_value(int value);
 
 };
