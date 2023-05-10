@@ -1,33 +1,33 @@
 /*
-  Credits : Pierre BABIAN	pierrebabian4@gmail.com
+  Credits : Pierre BABIAN  pierrebabian4@gmail.com
   This is a script for wifi management on esp32
   
-  - I used SimpleWiFiServer and WiFiAccessPoint from WiFi examples 	-
-  - And libraries that it is using 									-
+  - I used SimpleWiFiServer and WiFiAccessPoint from WiFi examples  -
+  - And libraries that it is using                  -
 */
 #include <EEPROM.h>//https://github.com/espressif/arduino-esp32/tree/master/libraries/EEPROM
 #include <WiFi.h>
-#include <WiFiClient.h>
+//#include <WiFiClient.h>
 #include <WiFiAP.h>
-#include <WebServer.h>
-
+#include <string>
+//#include <WebServer.h>
   
 #define EEPROM_SIZE 12
-#define MAX_FIELD_SIZE	64
+#define MAX_FIELD_SIZE  64
 
 //errors :
-#define UNVALID_SETTING	1
-#define UNVALID_CHECK_SAVE	2
+#define UNVALID_SETTING 1
+#define UNVALID_CHECK_SAVE  2
 
 //addresses : 
 #define SEUIL_1_ADRESS    0
 #define SEUIL_2_ADRESS    2
-#define BRIGHTNESS_ADRESS	4
-#define SENSIVITY_ADRESS	6
+#define BRIGHTNESS_ADRESS 4
+#define SENSIVITY_ADRESS  6
 #define MODE_JAUGE_SMILEY_ADRESS 10
-#define STATE_WIFI_ADRESS	11
-#define SSID_ADRESS		    13
-#define PWD_ADRESS			  MAX_FIELD_SIZE + SSID_ADRESS
+#define STATE_WIFI_ADRESS 11
+#define SSID_ADRESS       13
+#define PWD_ADRESS        MAX_FIELD_SIZE + SSID_ADRESS
 
 enum idle_client_server {
   IDLE,
@@ -42,6 +42,7 @@ enum idle_client_server {
 // - wifi_connected -> wifi connected -> client_idle or client_choosing
 
 enum wifi_state_enum {
+  WIFI_NO_STATE,
   HOTSPOT_NOT_CONNECTED,
   HOTSPOT_CONNECTED,
   WIFI_NOT_CONNECTED,
@@ -51,6 +52,7 @@ enum wifi_state_enum {
 // Set these to your desired credentials.
 const char *ssid = "BAB_0";
 const char *password = "BAB_bpmp";
+int count = 0;
 
 WiFiServer server(80);
 
@@ -128,6 +130,7 @@ void page_hotspot_string(String *string_html, settings_context settings) {
 *string_html += "  </script>";
 *string_html += "</body>";
 *string_html += "</html>";
+*string_html += "\n";
 *string_html += "HTTP/1.1 200 OK";
 *string_html += "\n";
 //Serial.println(*string_html);
@@ -135,7 +138,7 @@ void page_hotspot_string(String *string_html, settings_context settings) {
 
 int get_settings_ctx(settings_context *settings_ctx)
 {
-	int ret = 0;
+  int ret = 0;
   int address = MODE_JAUGE_SMILEY_ADRESS;
   settings_ctx->mode_jauge_smiley = EEPROM.readUShort(address);
   if ((settings_ctx->mode_jauge_smiley > 255) || (settings_ctx->mode_jauge_smiley < 0)) {
@@ -154,64 +157,64 @@ int get_settings_ctx(settings_context *settings_ctx)
     ret = -UNVALID_SETTING;
   }
   
-	address = BRIGHTNESS_ADRESS;
-	settings_ctx->brightness = EEPROM.readUShort(address);
-	if ((settings_ctx->brightness > 255) || (settings_ctx->brightness < 0)) {
-		ret = -UNVALID_SETTING;
-	}
-	
-	address = SENSIVITY_ADRESS;
-	settings_ctx->sensitivity = EEPROM.readULong(address);
-	if ((settings_ctx->sensitivity > 255) || (settings_ctx->sensitivity < 0)) {
-		ret = -UNVALID_SETTING;
-	}
-	
-	address = STATE_WIFI_ADRESS;
-	settings_ctx->state_wifi_on_boot = (wifi_state_enum)EEPROM.readUShort(address);
-	if ((settings_ctx->state_wifi_on_boot > WIFI_CONNECTED)
-			|| (settings_ctx->state_wifi_on_boot < HOTSPOT_NOT_CONNECTED)) {
-		ret = -UNVALID_SETTING;
-	}
-	address = SSID_ADRESS;
-	for (int i = 0; i < MAX_FIELD_SIZE; i++) {
-		settings_ctx->wifi_ssid[i] = EEPROM.readChar(address + i);
-	}
+  address = BRIGHTNESS_ADRESS;
+  settings_ctx->brightness = EEPROM.readUShort(address);
+  if ((settings_ctx->brightness > 255) || (settings_ctx->brightness < 0)) {
+    ret = -UNVALID_SETTING;
+  }
+  
+  address = SENSIVITY_ADRESS;
+  settings_ctx->sensitivity = EEPROM.readULong(address);
+  if ((settings_ctx->sensitivity > 255) || (settings_ctx->sensitivity < 0)) {
+    ret = -UNVALID_SETTING;
+  }
+  
+  address = STATE_WIFI_ADRESS;
+  settings_ctx->state_wifi_on_boot = (wifi_state_enum)EEPROM.readUShort(address);
+  if ((settings_ctx->state_wifi_on_boot > WIFI_CONNECTED)
+      || (settings_ctx->state_wifi_on_boot < HOTSPOT_NOT_CONNECTED)) {
+    ret = -UNVALID_SETTING;
+  }
+  address = SSID_ADRESS;
+  for (int i = 0; i < MAX_FIELD_SIZE; i++) {
+    settings_ctx->wifi_ssid[i] = EEPROM.readChar(address + i);
+  }
 
-	address = PWD_ADRESS;
-	for (int i = 0; i < MAX_FIELD_SIZE; i++) {
-		settings_ctx->wifi_pass[i] = EEPROM.readChar(address + i);
-	}
-	return ret;
+  address = PWD_ADRESS;
+  for (int i = 0; i < MAX_FIELD_SIZE; i++) {
+    settings_ctx->wifi_pass[i] = EEPROM.readChar(address + i);
+  }
+  return ret;
 }
 
 
 
 int save_settings_ctx(settings_context settings_ctx)
 {
-	int ret = 0;
+  int ret = 0;
   int address = MODE_JAUGE_SMILEY_ADRESS;
   EEPROM.writeByte(address, settings_ctx.mode_jauge_smiley);
   address = SEUIL_1_ADRESS;
   EEPROM.writeUShort(address, settings_ctx.seuil_1);
   address = SEUIL_2_ADRESS;
   EEPROM.writeUShort(address, settings_ctx.seuil_2);
-	address = BRIGHTNESS_ADRESS;
-	EEPROM.writeUShort(address, settings_ctx.brightness);
-	address = SENSIVITY_ADRESS;
-	EEPROM.writeULong(address, settings_ctx.sensitivity);
-	address = STATE_WIFI_ADRESS;
-	EEPROM.writeUShort(address, settings_ctx.state_wifi_on_boot);
-	address = SSID_ADRESS;
-	for (int i = 0; i < MAX_FIELD_SIZE; i++) {
-		EEPROM.writeChar(address + i, settings_ctx.wifi_ssid[i]);
-	}
-	address = PWD_ADRESS;
-	for (int i = 0; i < MAX_FIELD_SIZE; i++) {
-		EEPROM.writeChar(address + i, settings_ctx.wifi_pass[i]);
-	}
+  address = BRIGHTNESS_ADRESS;
+  EEPROM.writeUShort(address, settings_ctx.brightness);
+  address = SENSIVITY_ADRESS;
+  EEPROM.writeULong(address, settings_ctx.sensitivity);
+  address = STATE_WIFI_ADRESS;
+  EEPROM.writeUShort(address, settings_ctx.state_wifi_on_boot);
+  address = SSID_ADRESS;
+  for (int i = 0; i < MAX_FIELD_SIZE; i++) {
+    EEPROM.writeChar(address + i, settings_ctx.wifi_ssid[i]);
+  }
+  address = PWD_ADRESS;
+  for (int i = 0; i < MAX_FIELD_SIZE; i++) {
+    EEPROM.writeChar(address + i, settings_ctx.wifi_pass[i]);
+  }
  
-	EEPROM.commit();
-	//verification
+  EEPROM.commit();
+  //verification
   address = MODE_JAUGE_SMILEY_ADRESS;
   settings_ctx.mode_jauge_smiley = EEPROM.readByte(address);
   if ((settings_ctx.mode_jauge_smiley > 255) || (settings_ctx.mode_jauge_smiley < 0)) {
@@ -229,33 +232,33 @@ int save_settings_ctx(settings_context settings_ctx)
   if ((settings_ctx.seuil_2 > 255) || (settings_ctx.seuil_2 < 0)) {
     ret = -UNVALID_SETTING;
   }
-	address = BRIGHTNESS_ADRESS;
-	if (settings_ctx.brightness != EEPROM.readUShort(address)) {
-		ret = -UNVALID_CHECK_SAVE;
-	}
-	address = SENSIVITY_ADRESS;
-	if (settings_ctx.sensitivity != EEPROM.readULong(address)) {
-		ret = -UNVALID_CHECK_SAVE;
-	}
-	address = STATE_WIFI_ADRESS;
-	if (settings_ctx.state_wifi_on_boot != EEPROM.readUShort(address)) {
-		ret = -UNVALID_CHECK_SAVE;
-	}
-	
-	address = SSID_ADRESS;
-	for (int i = 0; i < MAX_FIELD_SIZE; i++) {
-		if (settings_ctx.wifi_ssid[i] != EEPROM.readChar(address + i)) {
-			ret = -UNVALID_CHECK_SAVE;
-		}
-	}
-	
-	address = PWD_ADRESS;
-	for (int i = 0; i < MAX_FIELD_SIZE; i++) {
-		if (settings_ctx.wifi_pass[i] != EEPROM.readChar(address + i)) {
-			ret = -UNVALID_CHECK_SAVE;
-		}
-	}
-	return ret;
+  address = BRIGHTNESS_ADRESS;
+  if (settings_ctx.brightness != EEPROM.readUShort(address)) {
+    ret = -UNVALID_CHECK_SAVE;
+  }
+  address = SENSIVITY_ADRESS;
+  if (settings_ctx.sensitivity != EEPROM.readULong(address)) {
+    ret = -UNVALID_CHECK_SAVE;
+  }
+  address = STATE_WIFI_ADRESS;
+  if (settings_ctx.state_wifi_on_boot != EEPROM.readUShort(address)) {
+    ret = -UNVALID_CHECK_SAVE;
+  }
+  
+  address = SSID_ADRESS;
+  for (int i = 0; i < MAX_FIELD_SIZE; i++) {
+    if (settings_ctx.wifi_ssid[i] != EEPROM.readChar(address + i)) {
+      ret = -UNVALID_CHECK_SAVE;
+    }
+  }
+  
+  address = PWD_ADRESS;
+  for (int i = 0; i < MAX_FIELD_SIZE; i++) {
+    if (settings_ctx.wifi_pass[i] != EEPROM.readChar(address + i)) {
+      ret = -UNVALID_CHECK_SAVE;
+    }
+  }
+  return ret;
 }
 
 void init_wifi_connect(settings_context *settings_ctx)
@@ -281,82 +284,99 @@ void init_wifi_connect(settings_context *settings_ctx)
 
 void init_hotspot(settings_context *settings_ctx)
 {
-  //WiFi.softAP(settings_ctx->wifi_ssid, settings_ctx->wifi_pass);
-  WiFi.softAP("BAB_0", "BAB_pmbp"); 
-  IPAddress myIP = WiFi.softAPIP();
+
+   //WiFi.softAP(settings_ctx->wifi_ssid, settings_ctx->wifi_pass);
+  WiFi.softAP(settings_ctx->wifi_ssid, settings_ctx->wifi_pass); 
+  
+  IPAddress gateway(192, 168, 1, 1);
+  IPAddress local_IP(192, 168, 1, 1);
+  IPAddress subnet(255, 255, 255, 0);
+  WiFi.softAPConfig(local_IP, gateway, subnet);
   Serial.print("AP IP address: ");
-  Serial.println(myIP);
+  Serial.println(local_IP);
   server.begin();
   Serial.println("Server started");
+  Serial.print("ssid : ");
+  Serial.println(settings_ctx->wifi_ssid);   
+  Serial.print("ssid : ");
+  Serial.println(settings_ctx->wifi_pass);
 }
-
+//mult
 void user_management_wifi_connect(wifi_state_enum *state_wifi, settings_context *settings_ctx)
 {
-	
+  
 }
 
 void user_management_hotspot(wifi_state_enum *state_wifi, settings_context *settings_ctx)
 {
-  int count = 0;
   String string_html;
   WiFiClient client = server.available();   // listen for incoming clients
-  uint8_t web_send = 0;
-  if (client) {                             // if you get a client,
+
+  if (client) {    // if you get a client,
     Serial.println("New Client.");           // print a message out the serial port
     String currentLine = "";                // make a String to hold incoming data from the client
+    
     while (client.connected()) {
+
       if (client.available()) {             // if there's bytes to read from the client,
-        char c = client.read();             // read a byte, then
-        Serial.write(c);                    // print it out the serial monitor
-        if (c == '\n') {
-          // Check if POST request is received
-          Serial.print(currentLine);
-          Serial.println("DEBUG 1");
-          if (currentLine.endsWith("POST /fromdata")) {
-            // Read incoming POST data
-            Serial.println("DEBUG 1.1");
-            String line = client.readStringUntil('\r');
-            if (line.startsWith("seuilhaut")) {
-              settings_ctx->seuil_1 = line.substring(line.indexOf('=') + 1).toInt();
-            } else if (line.startsWith("seuilbas")) {
-              settings_ctx->seuil_2 = line.substring(line.indexOf('=') + 1).toInt();
-            } else if (line.startsWith("sensibilite")) {
-              settings_ctx->sensitivity = line.substring(line.indexOf('=') + 1).toInt();
-            } else if (line.startsWith("luminosite")) {
-              settings_ctx->brightness = line.substring(line.indexOf('=') + 1).toInt();
-            } else if (line.startsWith("smiley")) {
-              settings_ctx->mode_jauge_smiley = line.substring(line.indexOf('=') + 1).toInt();
-            }
-            Serial.println("Context :");
-            Serial.println(settings_ctx->seuil_1);
-            web_send = 0;
-          } else if (!web_send) {    // if you got a newline, then clear currentLine:
-            Serial.println("DEBUG 1.2");
-            web_send = 1;
-            currentLine = "";
-            save_settings_ctx(*settings_ctx);
-            // Send HTTP response with updated values
-            page_hotspot_string(&string_html, *settings_ctx);
-            client.println(string_html);
-            //server.send(200, "text/html", string_html);
-            //client.stop();
+        currentLine = client.readString();             // read a byte, then
+        Serial.print("DEBUG: ");
+        Serial.println(currentLine);                    // print it out the serial monitor
+        //Serial.println(currentLine);
+        //Serial.println("DEBUG form : " + server.args("input2"))
+        //Serial.println("DEBUG 1.3");
+        Serial.print(currentLine);
+          
+        if (currentLine.startsWith("POST") > 0) {
+          int index = currentLine.indexOf("\n\r\n");
+          String line;
+          for (int i = index; currentLine[i] != '\0'; i++){
+              line += currentLine[i];
           }
-        } else if (c != '\r') {
-            // End of current line, move to the next one
-            currentLine += c;
-         // } else {
-            // Append character to current line
-          //  currentLine += c;
+          Serial.println(" DEBUG : LINE: "+ line);
+          if (line.startsWith("seuilhaut")) {
+            settings_ctx->seuil_1 = line.substring(line.indexOf('=') + 1).toInt();
+          } else if (line.startsWith("seuilbas")) {
+            settings_ctx->seuil_2 = line.substring(line.indexOf('=') + 1).toInt();
+          } else if (line.startsWith("sensibilite")) {
+            settings_ctx->sensitivity = line.substring(line.indexOf('=') + 1).toInt();
+          } else if (line.startsWith("luminosite")) {
+            settings_ctx->brightness = line.substring(line.indexOf('=') + 1).toInt();
+          } else if (line.startsWith("smiley")) {
+            settings_ctx->mode_jauge_smiley = line.substring(line.indexOf('=') + 1).toInt();
           }
+          Serial.println("Context :");
+          Serial.println(settings_ctx->seuil_1);
+        } else {    // if you got a newline, then clear currentLine:
+          Serial.println("DEBUG 1.2");
+          currentLine = "";
+          //save_settings_ctx(*settings_ctx);
+          // Send HTTP response with updated values
+          page_hotspot_string(&string_html, *settings_ctx);
+          client.println(string_html);
+
+        }
+        //read the end of the request (not used for now)
+        while (client.available()){
+          //do nothing until the string of the request has been received
+          client.read();
+        }
+      
+      } else {
+        count++;
+        if (count > 10000) {
+          count = 0;
+          Serial.println("Client unavailable");
         }
       }
-      // close the connection:
-      client.stop();
-      Serial.println("Client Disconnected.");
-      web_send = 0;
+     }
+     Serial.println(currentLine);
+    // close the connection:
+    //client.stop();
+    //Serial.println("Client Disconnected.");
   } else {
     count++;
-    if (count > 100) {
+    if (count > 10000) {
       count = 0;
       Serial.println("Searching for client");
     }
@@ -364,52 +384,52 @@ void user_management_hotspot(wifi_state_enum *state_wifi, settings_context *sett
 }
 void hotspot_connected(wifi_state_enum *state_wifi, settings_context *settings_ctx, uint16_t *wifi_idle_client_server)
 {
-		user_management_hotspot(state_wifi, settings_ctx);
+    user_management_hotspot(state_wifi, settings_ctx);
 }
 
 void hotspot_not_connected(wifi_state_enum *state_wifi, settings_context *settings_ctx, uint16_t *wifi_idle_client_server)
 {
-	switch (*wifi_idle_client_server) {
-	case CLIENT://case when the device is comming from wifi setup
-		server.end();
-		WiFi.disconnect();
-		*wifi_idle_client_server = HOTSPOT;
+  switch (*wifi_idle_client_server) {
+  case CLIENT://case when the device is comming from wifi setup
+    server.end();
+    WiFi.disconnect();
+    *wifi_idle_client_server = HOTSPOT;
   case IDLE:
-	case HOTSPOT:
-		init_hotspot(settings_ctx);
-		*state_wifi = HOTSPOT_CONNECTED;
+  case HOTSPOT:
+    init_hotspot(settings_ctx);
+    *state_wifi = HOTSPOT_CONNECTED;
     Serial.println("Going in hotspot connected");
-		break;
-	}
+    break;
+  }
 }
 
 void wifi_connected(wifi_state_enum *state_wifi, settings_context *settings_ctx, uint16_t *wifi_idle_client_server)
 {
-	if (WiFi.status() == WL_CONNECTED) {
-		user_management_wifi_connect(state_wifi, settings_ctx);
-	} else {
-		*state_wifi = WIFI_NOT_CONNECTED;
-	}
+  if (WiFi.status() == WL_CONNECTED) {
+    user_management_wifi_connect(state_wifi, settings_ctx);
+  } else {
+    *state_wifi = WIFI_NOT_CONNECTED;
+  }
 }
 
 void wifi_not_connected(wifi_state_enum *state_wifi, settings_context *settings_ctx, uint16_t *wifi_idle_client_server)
 {
-	switch (*wifi_idle_client_server) {
-	case HOTSPOT: //case when the device is comming from hotspot setup
-		server.end();
-		WiFi.disconnect();
-		*wifi_idle_client_server = IDLE;
-	case IDLE:
-		init_wifi_connect(settings_ctx);
-		*wifi_idle_client_server = CLIENT;
-	case CLIENT:
-		if (WiFi.status() == WL_CONNECTED) {
-			*state_wifi = WIFI_CONNECTED;
-		} else {
-			//searching wifi router
-		}
-		break;
-	}
+  switch (*wifi_idle_client_server) {
+  case HOTSPOT: //case when the device is comming from hotspot setup
+    server.end();
+    WiFi.disconnect();
+    *wifi_idle_client_server = IDLE;
+  case IDLE:
+    init_wifi_connect(settings_ctx);
+    *wifi_idle_client_server = CLIENT;
+  case CLIENT:
+    if (WiFi.status() == WL_CONNECTED) {
+      *state_wifi = WIFI_CONNECTED;
+    } else {
+      //searching wifi router
+    }
+    break;
+  }
 }
 
 void setup() {
@@ -438,30 +458,14 @@ void loop() {
 
 
   while (loop) {
-	//wifi state machine :
+  //wifi state machine :
     switch (state_wifi) {
-      case HOTSPOT_NOT_CONNECTED:
-		  hotspot_not_connected(&state_wifi, &settings_ctx, &wifi_idle_client_server);
-		  break;
-
-      case HOTSPOT_CONNECTED:
-		  hotspot_connected(&state_wifi, &settings_ctx, &wifi_idle_client_server);
-		  break;      
-
-      case WIFI_NOT_CONNECTED:
-		  wifi_not_connected(&state_wifi, &settings_ctx, &wifi_idle_client_server);
-		  break;
-
-      case WIFI_CONNECTED:
-		  wifi_connected(&state_wifi, &settings_ctx, &wifi_idle_client_server);
-		  break;
-
-      default:
-		  Serial.println("State wifi not defined !\nGoing to hotspot not connected");
-      Serial.println(settings_ctx.wifi_ssid[0], HEX);
-      Serial.println(settings_ctx.wifi_ssid[0], DEC);
-    
+      case WIFI_NO_STATE:
+      Serial.println("State wifi not defined !\nSetting up wifi and going to hotspot not connected");
+      //if nothing in wifi settings (from 
       if (settings_ctx.wifi_ssid[0] == 0) {
+        Serial.println("wifi setings default");
+        //btw can be used for first boot
         for (int i = 0; i < MAX_FIELD_SIZE; i++) {
           settings_ctx.wifi_ssid[i] = ssid[i];
           settings_ctx.wifi_pass[i] = password[i];
@@ -470,11 +474,30 @@ void loop() {
         if (ret != 0) {
           Serial.println("save failed");
         }
-        get_settings_ctx(&settings_ctx);
         Serial.print("ssid : ");
         Serial.println(settings_ctx.wifi_ssid);
       }
       state_wifi = HOTSPOT_NOT_CONNECTED;
+      break;
+      
+      case HOTSPOT_NOT_CONNECTED:
+      hotspot_not_connected(&state_wifi, &settings_ctx, &wifi_idle_client_server);
+      break;
+
+      case HOTSPOT_CONNECTED:
+      hotspot_connected(&state_wifi, &settings_ctx, &wifi_idle_client_server);
+      break;      
+
+      case WIFI_NOT_CONNECTED:
+      wifi_not_connected(&state_wifi, &settings_ctx, &wifi_idle_client_server);
+      break;
+
+      case WIFI_CONNECTED:
+      wifi_connected(&state_wifi, &settings_ctx, &wifi_idle_client_server);
+      break;
+
+      default:
+      //
       break;
     }
   }
