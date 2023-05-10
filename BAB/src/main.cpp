@@ -142,7 +142,6 @@ void display_smiley(uint8_t dB_val)
 // remplissage de la matrice de led 
 void fill_tab(uint8_t dB_val)
 {
-  Serial.print("DEBUG: dB_val: ");Serial.println(dB_val);
   bool buf_case;
   bool buf_line[SIZE_TAB] = {0};
   
@@ -203,7 +202,6 @@ void loop()
     state = !state;
     usleep(delay_val);
   }
-  //Serial.print("DEBUG STATE"  );Serial.println(state);
   if (state){
     display_smiley(calc_dB_average(&micro,50));
   }else{

@@ -1,8 +1,7 @@
-
 #include "micros.h"
 
 
-icrophone::setup_mic(){
+void Microphone::setup_mic(){
   pinMode(22, INPUT);
   i2s_driver_install(i2s_num, &i2s_config, 0, NULL);   //install and start i2s driver
   REG_SET_BIT(  I2S_TIMING_REG(i2s_num),BIT(9));   /*  #include "soc/i2s_reg.h"   I2S_NUM -> 0 or 1*/
@@ -25,12 +24,10 @@ uint16_t Microphone::mic_get_val() {
       if (audio_buf[i] != 0)    // Exclude values from other channel
       {
           cleanBuf[cleanBufIdx] = audio_buf[i] >> 14;
-
           if (cleanBuf[cleanBufIdx] != 0){
             meanval += cleanBuf[i];
             volCount++;
           }
-          
           cleanBufIdx++;
       }
     }
@@ -44,11 +41,10 @@ uint16_t Microphone::mic_get_val() {
 
     // find the 'peak to peak' max
     float maxsample, minsample;
-    minsample = 100000;
-    maxsample = -100000;
+    minsample = 100000; maxsample = -100000;
+    
     for (int i=0; i<volCount; i++) {
-      minsample = _min(minsample, cleanBuf[i]);
-      maxsample = _max(maxsample, cleanBuf[i]);
+      minsample = _min(minsample, cleanBuf[i]); maxsample = _max(maxsample, cleanBuf[i]);
     }
     return (maxsample - minsample);
 }
