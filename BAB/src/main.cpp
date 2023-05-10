@@ -284,6 +284,7 @@ void init_wifi_connect(settings_context *settings_ctx)
 
 void init_hotspot(settings_context *settings_ctx)
 {
+<<<<<<< HEAD:BAB/src/main.cpp
 
    //WiFi.softAP(settings_ctx->wifi_ssid, settings_ctx->wifi_pass);
   WiFi.softAP(settings_ctx->wifi_ssid, settings_ctx->wifi_pass); 
@@ -292,6 +293,11 @@ void init_hotspot(settings_context *settings_ctx)
   IPAddress local_IP(192, 168, 1, 1);
   IPAddress subnet(255, 255, 255, 0);
   WiFi.softAPConfig(local_IP, gateway, subnet);
+=======
+  //WiFi.softAP(settings_ctx->wifi_ssid, settings_ctx->wifi_pass);
+  WiFi.softAP(settings_ctx->wifi_ssid, settings_ctx->wifi_pass); 
+  IPAddress myIP = WiFi.softAPIP();
+>>>>>>> 0446d97ca9df9e5f067dcbe5832bc13f8b863aa2:src/BAB/BAB_wifi.ino
   Serial.print("AP IP address: ");
   Serial.println(local_IP);
   server.begin();
@@ -311,14 +317,19 @@ void user_management_hotspot(wifi_state_enum *state_wifi, settings_context *sett
 {
   String string_html;
   WiFiClient client = server.available();   // listen for incoming clients
+<<<<<<< HEAD:BAB/src/main.cpp
 
   if (client) {    // if you get a client,
+=======
+  if (client) {                             // if you get a client,
+>>>>>>> 0446d97ca9df9e5f067dcbe5832bc13f8b863aa2:src/BAB/BAB_wifi.ino
     Serial.println("New Client.");           // print a message out the serial port
     String currentLine = "";                // make a String to hold incoming data from the client
     
     while (client.connected()) {
 
       if (client.available()) {             // if there's bytes to read from the client,
+<<<<<<< HEAD:BAB/src/main.cpp
         currentLine = client.readString();             // read a byte, then
         Serial.print("DEBUG: ");
         Serial.println(currentLine);                    // print it out the serial monitor
@@ -371,12 +382,62 @@ void user_management_hotspot(wifi_state_enum *state_wifi, settings_context *sett
       }
      }
      Serial.println(currentLine);
+=======
+        char c = client.read();             // read a byte, then
+        Serial.write(c);                    // print it out the serial monitor
+        if (c == '\n') {
+          Serial.println("DEBUG 1.3");
+          //Serial.print(currentLine);
+          if (currentLine.indexOf("POST /submit_1") > 0) {
+            // Read incoming POST data
+            Serial.println("DEBUG 1.1");
+            String line = client.readStringUntil('\r');
+            Serial.print("DEBUG : client read : ");
+            Serial.println(line);
+            if (line.startsWith("seuilhaut")) {
+              settings_ctx->seuil_1 = line.substring(line.indexOf('=') + 1).toInt();
+            } else if (line.startsWith("seuilbas")) {
+              settings_ctx->seuil_2 = line.substring(line.indexOf('=') + 1).toInt();
+            } else if (line.startsWith("sensibilite")) {
+              settings_ctx->sensitivity = line.substring(line.indexOf('=') + 1).toInt();
+            } else if (line.startsWith("luminosite")) {
+              settings_ctx->brightness = line.substring(line.indexOf('=') + 1).toInt();
+            } else if (line.startsWith("smiley")) {
+              settings_ctx->mode_jauge_smiley = line.substring(line.indexOf('=') + 1).toInt();
+            }
+            Serial.println("Context :");
+            Serial.println(settings_ctx->seuil_1);
+          } else {    // if you got a newline, then clear currentLine:
+            Serial.println("DEBUG 1.2");
+            currentLine = "";
+            //save_settings_ctx(*settings_ctx);
+            // Send HTTP response with updated values
+            page_hotspot_string(&string_html, *settings_ctx);
+            client.println(string_html);
+
+          }
+          //read the end of the request (not used for now)
+          while (client.available()){
+            //do nothing until the string of the request has been received
+            client.read();
+          }
+        } else {
+          currentLine += c;
+        }
+      }
+      client = server.available();
+     }
+>>>>>>> 0446d97ca9df9e5f067dcbe5832bc13f8b863aa2:src/BAB/BAB_wifi.ino
     // close the connection:
     //client.stop();
     //Serial.println("Client Disconnected.");
   } else {
     count++;
+<<<<<<< HEAD:BAB/src/main.cpp
     if (count > 10000) {
+=======
+    if (count > 100000) {
+>>>>>>> 0446d97ca9df9e5f067dcbe5832bc13f8b863aa2:src/BAB/BAB_wifi.ino
       count = 0;
       Serial.println("Searching for client");
     }
