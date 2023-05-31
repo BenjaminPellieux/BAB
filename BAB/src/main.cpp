@@ -132,9 +132,10 @@ void display_smiley(uint8_t dB_val)
   bool led;
 
   for(uint8_t i = 0; i != MID_NUM_LED; i++ ){
-    led  = tab_eyes[smiley][i];
+    led = tab_eyes[smiley][i];
+    //leds[i + 255 - (i % SIZE_TAB) * (SIZE_TAB)] = CRGB(g * led, r * led, 0);
     leds[i] = CRGB(g * led, r * led, 0);
-    led  = tab_mouth[smiley][i];
+    led = tab_mouth[smiley][i];
     leds[i + MID_NUM_LED] = CRGB(g * led, r * led, 0);
 
   }
@@ -207,11 +208,8 @@ void display_gauge()
 
   for (uint8_t i = 0; i != SIZE_TAB; i++) {
     for (uint8_t j = 0; j != SIZE_TAB; j++) {
-      if (i % 2) {
-        used_j = SIZE_TAB - j - 1;
-      } else {
-        used_j = j;
-      }
+      used_j = (i % 2) ? SIZE_TAB - j - 1 : j;
+      
       if (tab_mem[i][used_j]) {
         r = (LUM_MAX * j) / SIZE_TAB;
         g = (LUM_MAX * (SIZE_TAB - j)) / SIZE_TAB;
