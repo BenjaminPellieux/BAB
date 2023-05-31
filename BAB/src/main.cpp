@@ -2,7 +2,7 @@
 // TODO: 
 // - Rotation des gauge 
 // - refactoring fonction display_gauge
-// - Interrupt button pin 
+// - Interrupt button pin DONE
  
 #include <FastLED.h>
 #include "micros.h"
@@ -17,7 +17,7 @@
 #define SIZE_HALF_TAB 8
 #define DELAY 100
 #define LUM_MAX 50
-#define dB_MAX 120
+#define dB_MAX 130
 
 uint16_t delay_val = DELAY;
 bool state = 0;
@@ -25,6 +25,12 @@ bool tab_mem[SIZE_TAB][SIZE_TAB];
 CRGB leds[NUM_LEDS];
 Microphone micro;
 
+
+
+void set_state(){
+  state = !state;
+  usleep(delay_val);
+}
 //------------------------------------------------------------//
 
 void setup() {
@@ -33,15 +39,14 @@ void setup() {
   Serial.begin(9600);
   FastLED.addLeds<WS2811, DATA_PIN, RGB>(leds, NUM_LEDS);
   micro.setup_mic();
-  //attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), interrupt_button, RISING);
+  attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), set_state, RISING);
 }
 
 //------------------------------------------------------------//
 
 
 
-
-static void quick_sort(uint16_t* array, uint8_t array_size){
+static void quick_sort(uint32_t* array, uint8_t array_size){
   bool flag;
   uint16_t tmp;
 
@@ -89,8 +94,8 @@ This function calculates the median of a sample of a size pass as a parameter
 @ Date:  15/04/23
 @ State:  Done 
 */
-static uint8_t calc_dB_median(Microphone* micro,uint8_t sample_size){
-  uint16_t *sample = (uint16_t*) malloc(sizeof(uint16_t) * sample_size);
+static uint32_t calc_dB_median(Microphone* micro,uint32_t sample_size){
+  uint32_t *sample = (uint32_t*) malloc(sizeof(uint32_t) * sample_size);
   if (!sample){ // Check of thin provisioning exit if failure
     EXIT_FAILURE; 
   }
@@ -133,28 +138,36 @@ void display_smiley(uint8_t dB_val)
     leds[i + MID_NUM_LED] = CRGB(g * led, r * led, 0);
 
   }
-  FastLED.show();  
+  FastLED.show();
 }
 
 //------------------------------------------------------------//
 
 
-// remplissage de la matrice de led 
-void fill_tab(uint8_t dB_val)
+/*
+Fill tab based on current volume
+Matrice size:  16 * 16
+dB_MAX / 16 = dB per Pixel  
+This function decomposes all the rows of the table and fills 
+the last according to the volume found
+@ Author: Pierre BABIAN & Benjamin PELLIEUX
+@ Date:  31/05/23
+@ State:  Done 
+*/
+void fill_tab(uint32_t dB_val)
 {
   bool buf_case;
   bool buf_line[SIZE_TAB] = {0};
   
   for (int i = 0; i !=  SIZE_TAB; i++) {
-    for (int j = 0; j != SIZE_TAB; j++) {
-      
+    for (int j = 0; j != SIZE_TAB; j++) {   
       if (i) {
         buf_case = tab_mem[i][j];
         tab_mem[i][j] = buf_line[j];
         buf_line[j] = buf_case;
       } else {
         buf_line[j] = tab_mem[i][j];
-        if ((dB_val < dB_MAX) && (j < (dB_val * SIZE_TAB) / dB_MAX)) {
+        if (j < (dB_val * SIZE_TAB) / dB_MAX) {
           tab_mem[i][j] = 1;
         } else {
           tab_mem[i][j] = 0;
@@ -166,14 +179,34 @@ void fill_tab(uint8_t dB_val)
 
 
 
+// fonction d'affchage des jauges Deprecated 
+// void display_gauge()
+// {
+//   uint8_t r = 0, g = 0;
+
+//   for (uint8_t i = 0; i != SIZE_TAB; i++) {
+//     for (uint8_t j = 0; j != SIZE_TAB; j++) {
+//       if (tab_mem[i][j]) {
+//         r = (LUM_MAX * j) / SIZE_TAB;
+//         g = (LUM_MAX * (SIZE_TAB - j)) / SIZE_TAB;
+//       } else {
+//         r = 0; g = 0;
+//       }
+//       leds[(i * SIZE_TAB) + j] = CRGB((r * (i % 2)) + (g * !(i % 2)),
+//                                       (r * !(i % 2)) + (g * (i % 2)),
+//                                       0);
+//     }
+//   }
+//   FastLED.show(); 
+// }
+
 // fonction d'affchage des jauges 
 void display_gauge()
 {
-  uint8_t r = 0;
-  uint8_t g = 0;
-  uint8_t used_j = 0;
-  for (uint8_t i = 0; i < SIZE_TAB; i++) {
-    for (uint8_t j = 0; j < SIZE_TAB; j++) {
+  uint8_t r = 0, g = 0, used_j = 0;
+
+  for (uint8_t i = 0; i != SIZE_TAB; i++) {
+    for (uint8_t j = 0; j != SIZE_TAB; j++) {
       if (i % 2) {
         used_j = SIZE_TAB - j - 1;
       } else {
@@ -198,14 +231,10 @@ void display_gauge()
 
 void loop()
 {
-  if (!digitalRead(BUTTON_PIN)) {
-    state = !state;
-    usleep(delay_val);
-  }
   if (state){
     display_smiley(calc_dB_average(&micro,50));
   }else{
-    fill_tab(calc_dB_median(&micro,5));
+    fill_tab(calc_dB_average(&micro,5));
     display_gauge();
   }
   usleep(delay_val);

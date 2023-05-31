@@ -68,7 +68,7 @@ class Microphone{
     public:
 
         void setup_mic();
-        uint16_t mic_get_val();
-        float get_dB_value(int value);
+        uint32_t mic_get_val();
+        uint8_t get_dB_value(int value);
 
 };

@@ -9,7 +9,7 @@ void Microphone::setup_mic(){
   i2s_set_pin(i2s_num, &pin_config);
 }
 
-uint16_t Microphone::mic_get_val() {
+uint32_t Microphone::mic_get_val() {
     size_t size;
     int32_t audio_buf[BUFLEN];
     int32_t cleanBuf[BUFLEN] {0};
@@ -49,6 +49,6 @@ uint16_t Microphone::mic_get_val() {
     return (maxsample - minsample);
 }
 
-float Microphone::get_dB_value(int value){
+uint8_t Microphone::get_dB_value(int value){
   return log(value / a)/b;
 }
