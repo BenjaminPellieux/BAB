@@ -236,4 +236,8 @@ void loop()
     display_gauge();
   }
   usleep(delay_val);
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> main
