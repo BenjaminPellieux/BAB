@@ -34,8 +34,8 @@
 #include "soc/i2s_reg.h"
 #include <math.h>
 
-#define a 3.00786665 // coeficient a de la fonction a.e^bx
-#define b 0.0781188 // coeficient b de la fonction a.e^bx
+#define CA 3.00786665 // coeficient a de la fonction a.e^bx
+#define CB 0.0781188 // coeficient b de la fonction a.e^bx
 
 
 static const i2s_config_t i2s_config = {

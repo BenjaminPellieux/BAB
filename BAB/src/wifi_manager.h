@@ -5,6 +5,19 @@
 
 #define MAX_FIELD_SIZE  64
 
+#include <EEPROM.h>//https://github.com/espressif/arduino-esp32/tree/master/libraries/EEPROM
+#include <WiFi.h>
+#include <WiFiAP.h>
+#include <string>
+
+
+  
+#define EEPROM_SIZE sizeof(settings_context) + 1
+
+//errors :
+#define UNVALID_SETTING 1
+#define UNVALID_CHECK_SAVE  2
+
 enum idle_client_server {
   IDLE,
   HOTSPOT,

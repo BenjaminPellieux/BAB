@@ -5,27 +5,11 @@
   - I used SimpleWiFiServer and WiFiAccessPoint from WiFi examples  -
   - And libraries that it is using                  -
 */
-#include <EEPROM.h>//https://github.com/espressif/arduino-esp32/tree/master/libraries/EEPROM
-#include <WiFi.h>
-#include <WiFiAP.h>
-#include <string>
-
 #include "wifi_manager.h"
-  
-#define EEPROM_SIZE sizeof(settings_context) + 1
 
-//errors :
-#define UNVALID_SETTING 1
-#define UNVALID_CHECK_SAVE  2
-
-settings_context settings_ctx;
-idle_client_server wifi_idle_client_server = IDLE;
-
-// default credentials
 const char *ssid = "BAB_0";
 const char *password = "BAB_bpmp";
 int count = 0;
-
 WiFiServer server(80);
 
 /**
@@ -47,7 +31,7 @@ static void page_hotspot_string(String *string_html, settings_context settings) 
   *string_html += "    <input type='text' id='input1' name='input1' value='"; *string_html += settings.wifi_ssid; *string_html += "'><br><br>";
 
   *string_html += "    <label for='input2'>Mot de passe :</label>";
-  *string_html += "    <input type='text' id='input2' name='input2' value='"; *string_html += settings.wifi_pass; *string_html += "'><br><br>";
+  *string_html += "    <input type='password' id='input2' name='input2' value='"; *string_html += settings.wifi_pass; *string_html += "'><br><br>";
 
   *string_html += "    <label for='seuilHaut'>Seuil haut :</label>";
   *string_html += "    <input type='range' id='seuilHaut' name='seuilHaut' min='0' max='255' value='"; *string_html += String(settings.seuil_1); *string_html += "'><br><br>";
@@ -497,18 +481,18 @@ static void web_management(settings_context *settings_ctx)
 static void hotspot_not_connected(settings_context *settings_ctx, idle_client_server *wifi_idle_client_server)
 {
   switch (*wifi_idle_client_server) {
-  case CLIENT://case when the device is comming from wifi setup
-    Serial.println("stoping previous server");
-    server.end();
-    WiFi.disconnect();
-    *wifi_idle_client_server = HOTSPOT;
-  case IDLE:
-  case HOTSPOT:
-    init_hotspot(settings_ctx);
-    settings_ctx->state_wifi = HOTSPOT_CONNECTED;
-    Serial.println("Going in hotspot connected");
-    break;
-  }
+    case CLIENT://case when the device is comming from wifi setup
+      Serial.println("stoping previous server");
+      server.end();
+      WiFi.disconnect();
+      *wifi_idle_client_server = HOTSPOT;
+    case IDLE:
+    case HOTSPOT:
+      init_hotspot(settings_ctx);
+      settings_ctx->state_wifi = HOTSPOT_CONNECTED;
+      Serial.println("Going in hotspot connected");
+      break;
+    }
 }
 
 /**
@@ -578,29 +562,29 @@ void wifi_management(settings_context *settings_ctx, idle_client_server *wifi_id
   //wifi state machine :
   switch (settings_ctx->state_wifi) {
     case WIFI_NO_STATE:
-    Serial.println("State wifi not defined !\nSetting up wifi and going to hotspot not connected");
-    settings_ctx->state_wifi = HOTSPOT_NOT_CONNECTED;
+      Serial.println("State wifi not defined !\nSetting up wifi and going to hotspot not connected");
+      settings_ctx->state_wifi = HOTSPOT_NOT_CONNECTED;
     break;
     
     case HOTSPOT_NOT_CONNECTED:
-    Serial.println("Hotspot not connected");
-    hotspot_not_connected(settings_ctx, wifi_idle_client_server);
+      Serial.println("Hotspot not connected");
+      hotspot_not_connected(settings_ctx, wifi_idle_client_server);
     break;
 
     case HOTSPOT_CONNECTED:
-    web_management(settings_ctx);
+      web_management(settings_ctx);
     break;      
 
     case WIFI_NOT_CONNECTED:
-    settings_ctx->state_wifi = init_wifi_connect(settings_ctx);
+      settings_ctx->state_wifi = init_wifi_connect(settings_ctx);
     break;
 
     case WIFI_CONNECTED:
-    if (WiFi.status() == WL_CONNECTED) {
-      web_management(settings_ctx);
-    } else {
-      settings_ctx->state_wifi = WIFI_NOT_CONNECTED;
-    }
+      if (WiFi.status() == WL_CONNECTED) {
+        web_management(settings_ctx);
+      } else {
+        settings_ctx->state_wifi = WIFI_NOT_CONNECTED;
+      }
     break;
   }
 }

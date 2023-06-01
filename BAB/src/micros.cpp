@@ -50,5 +50,5 @@ uint32_t Microphone::mic_get_val() {
 }
 
 uint8_t Microphone::get_dB_value(int value){
-  return log(value / a)/b;
+  return log(value / CA)/ CB;
 }

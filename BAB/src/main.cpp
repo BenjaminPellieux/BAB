@@ -1,12 +1,12 @@
 
 // TODO: 
 // - Rotation des gauge 
-// - refactoring fonction display_gauge
-// - Interrupt button pin DONE
+// ini WIfi dans setup
  
 #include <FastLED.h>
 #include "micros.h"
 #include "matrice.cpp"
+#include "wifi_manager.h"
 
 
 #define MIC_PIN 34 //mic
@@ -25,6 +25,12 @@ bool tab_mem[SIZE_TAB][SIZE_TAB];
 CRGB leds[NUM_LEDS];
 Microphone micro;
 
+settings_context settings_ctx;
+idle_client_server wifi_idle_client_server = IDLE;
+
+// default credentials
+
+
 
 
 void set_state(){
@@ -40,6 +46,7 @@ void setup() {
   FastLED.addLeds<WS2811, DATA_PIN, RGB>(leds, NUM_LEDS);
   micro.setup_mic();
   attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), set_state, RISING);
+  init_wifi_management(&settings_ctx, &wifi_idle_client_server);
 }
 
 //------------------------------------------------------------//
@@ -229,6 +236,7 @@ void display_gauge()
 
 void loop()
 {
+  wifi_management(&settings_ctx, &wifi_idle_client_server);
   if (state){
     display_smiley(calc_dB_average(&micro,50));
   }else{
