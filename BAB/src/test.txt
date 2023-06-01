@@ -1,0 +1,134 @@
+Serial.println("New Client.");           // print a message out the serial port
+    String currentLine = "";                // make a String to hold incoming data from the client
+    
+    if (client.connected()) {
+
+      if (client.available()) {             // if there's bytes to read from the client,
+        currentLine = client.readString();             // read a byte, then
+        Serial.print("DEBUG: ");
+        Serial.println(currentLine);                    // print it out the serial monitor
+        //Serial.println(currentLine);
+        //Serial.println("DEBUG form : " + server.args("input2"))
+        //Serial.println("DEBUG 1.3");
+
+        if (currentLine.startsWith("200") > 0) {
+          currentLine = "";
+          delay(100);
+          client.readString();
+          Serial.println("Client ack ok");
+        } else if (currentLine.startsWith("GET") > 0) {
+          currentLine = "";
+          Serial.println("Client get received");
+          page_hotspot_string(&string_html, *settings_ctx);
+          client.println(string_html);
+          Serial.println(client.readString());
+        } else if (currentLine.startsWith("POST") > 0) {
+          int index = currentLine.indexOf("\n\r\n");
+          String line;
+          for (int i = index; currentLine[i] != '\0'; i++){
+              line += currentLine[i];
+          }
+          Serial.println("\nDEBUG : LINE: "+ line);
+
+          //index = 0;
+          //index = line.indexOf("input1=") + sizeof("input1=") - 1;
+          //string_result = line.substring(index, line.indexOf("&", index));
+          //string_result.toCharArray(settings_ctx->wifi_ssid, MAX_FIELD_SIZE);
+          snprintf(settings_ctx->wifi_ssid,
+                      line.indexOf("input2=") - (line.indexOf("input1=") + 6),
+                      "%s",
+                      line.substring(line.indexOf("input1=") + 7, (line.indexOf("input2=") - 1)));
+
+         
+          snprintf(settings_ctx->wifi_pass,
+                      line.indexOf("seuilHaut=") - (line.indexOf("input2=") + 6),
+                      "%s",
+                      line.substring(line.indexOf("input2=") + 7, (line.indexOf("seuilHaut=") - 1)));
+
+          mult = 1;
+          settings_ctx->seuil_1 = 0;
+          for (int i = line.indexOf("seuilBas=") - 2; i > line.indexOf("seuilHaut=") + 9; i--) {
+            settings_ctx->seuil_1 += mult * (line.charAt(i) - 48);
+            mult = mult * 10;
+          }
+          
+          mult = 1;
+          settings_ctx->seuil_2 = 0;
+          for (int i = line.indexOf("sensibilite=") - 2; i > line.indexOf("seuilBas=") + 8; i--) {
+            settings_ctx->seuil_2 += mult * (line.charAt(i) - 48);
+            mult = mult * 10;
+          }
+          
+          mult = 1;
+          settings_ctx->sensitivity = 0;
+          for (int i = line.indexOf("luminosite=") - 2; i > line.indexOf("sensibilite=") + 11; i--) {
+            settings_ctx->sensitivity += mult * (line.charAt(i) - 48);
+            mult = mult * 10;
+          }
+          
+          mult = 1;
+          settings_ctx->brightness = 0;
+          for (int i = line.length() - 1; i > line.indexOf("luminosite=") + 10; i--) {
+            settings_ctx->brightness += mult * (line.charAt(i) - 48);
+            mult = mult * 10;
+          }
+
+          Serial.print("sizeof line = ");
+          Serial.println(line.length());
+          Serial.print("saved :\nssid : ");
+          Serial.println(settings_ctx->wifi_ssid);
+          Serial.print("pass : ");
+          Serial.println(settings_ctx->wifi_pass);
+          Serial.print("seuil_haut : ");
+          Serial.println(settings_ctx->seuil_1);
+          Serial.print("seuil_bas : ");
+          Serial.println(settings_ctx->seuil_2);
+          Serial.print("sensi : ");
+          Serial.println(settings_ctx->sensitivity);
+          Serial.print("brightness : ");
+          Serial.println(settings_ctx->brightness);
+          Serial.print("connect_type : ");
+          Serial.println(settings_ctx->connect_type);
+
+          for (j = 0; (j < MAX_SSID_LEN) && (settings_ctx->wifi_pass[j] != '\0'); j++) {}
+          if ((settings_ctx->connect_type == 1) && (j >= 8)) {
+            settings_ctx->connect_type = 1;
+            settings_ctx->state_wifi_on_boot = WIFI_NOT_CONNECTED;
+          } else {
+            settings_ctx->connect_type = 0;
+            settings_ctx->state_wifi_on_boot = HOTSPOT_NOT_CONNECTED;
+          }
+        
+          //after getting the post request, send the web page and wait for the ack: 
+          page_hotspot_string(&string_html, *settings_ctx);
+          client.println(string_html);
+          Serial.println(client.readString());
+          currentLine = "";
+
+        }
+      
+        //else {
+
+        
+        
+        //}
+        
+        
+        //read the end of the request (not used for now)
+        //while (client.available()) {
+          //do nothing until the string of the request has been received
+        //  client.read();
+        //}
+      
+      } else {
+        count++;
+        if (count > 10000) {
+          count = 0;
+          Serial.println("Client unavailable");
+        }
+      }
+     }
+    //close the connection:
+    //client.stop();
+    //Serial.println("Client Disconnected.");
+  
