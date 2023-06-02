@@ -1,15 +1,9 @@
-/*
-  Credits : Pierre BABIAN  pierrebabian4@gmail.com
-  This is a script for wifi management on esp32
-  
-  - I used SimpleWiFiServer and WiFiAccessPoint from WiFi examples  -
-  - And libraries that it is using                  -
-*/
+
 #include "wifi_manager.h"
 
 const char *ssid = "BAB_0";
 const char *password = "BAB_bpmp";
-int count = 0;
+uint16_t count = 0;
 WiFiServer server(80);
 
 /**
@@ -380,7 +374,8 @@ static void web_management(settings_context *settings_ctx)
             settings_ctx->sensitivity += mult * (line.charAt(i) - 48);
             mult = mult * 10;
           }
-          
+          settings_ctx->sensitivity /= 128;
+
           mult = 1;
           settings_ctx->brightness = 0;
           if ((line.indexOf("connect_type=") > 0) && (line.indexOf("jauge=") > 0)) {

@@ -15,7 +15,7 @@
 #define VAL_MID 256
 #define SIZE_TAB 16
 #define SIZE_HALF_TAB 8
-#define DELAY 100
+#define DELAY 50
 #define LUM_MAX 50
 #define dB_MAX 130
 
@@ -130,10 +130,10 @@ Color RBG: 0 -> LUM_MAX ::
 @ Date:  15/04/23
 @ State:  Done 
 */
-void display_smiley(uint8_t dB_val)
+void display_smiley(uint8_t dB_val, settings_context* settings_ctx)
 {
   // smiley is 0 if db_val-70 < 0 else 1 + int(dB_val / 100)
-  uint8_t smiley = ((dB_val-70) < 0) ? 0 : 1 + (dB_val / 100);
+  uint8_t smiley = ((dB_val-settings_ctx->seuil_1) < 0) ? 0 : ((dB_val - settings_ctx->seuil_2) < 0) ? 1 : 2;
   uint8_t r = dB_val * LUM_MAX / dB_MAX; // from 0 to LUM_MAX
   uint8_t g = LUM_MAX - dB_val * LUM_MAX / dB_MAX; // from LUM_MAX to 0  
   bool led;
@@ -162,7 +162,7 @@ the last according to the volume found
 @ Date:  31/05/23
 @ State:  Done 
 */
-void fill_tab(uint32_t dB_val)
+void fill_tab(uint32_t dB_val, settings_context* settings_ctx)
 {
   bool buf_case;
   bool buf_line[SIZE_TAB] = {0};
@@ -175,7 +175,7 @@ void fill_tab(uint32_t dB_val)
         buf_line[j] = buf_case;
       } else {
         buf_line[j] = tab_mem[i][j];
-        if (j < (dB_val * SIZE_TAB) / dB_MAX) {
+        if (j < (dB_val * settings_ctx->sensitivity * SIZE_TAB) / dB_MAX) {
           tab_mem[i][j] = 1;
         } else {
           tab_mem[i][j] = 0;
@@ -238,9 +238,9 @@ void loop()
 {
   wifi_management(&settings_ctx, &wifi_idle_client_server);
   if (state){
-    display_smiley(calc_dB_average(&micro,50));
+    display_smiley(calc_dB_average(&micro,50), &settings_ctx);
   }else{
-    fill_tab(calc_dB_average(&micro,5));
+    fill_tab(calc_dB_average(&micro,5),&settings_ctx);
     display_gauge();
   }
   usleep(delay_val);
