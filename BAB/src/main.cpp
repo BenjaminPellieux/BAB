@@ -22,7 +22,7 @@
 uint16_t delay_val = DELAY;
 bool state = 0;
 bool tab_mem[SIZE_TAB][SIZE_TAB];
-CRGB leds[NUM_LEDS];
+CRGB leds[NUM_LEDS];// Representation of an RGB pixel (Red, Green, Blue) 
 Microphone micro;
 
 settings_context settings_ctx;
@@ -84,8 +84,12 @@ This function calculates the avarage of a sample of a size pass as a parameter
 */
 static uint8_t calc_dB_average(Microphone* micro,uint8_t sample_size){
   uint32_t sample = 0;
+  if (sample_size <= 0){
+    return EXIT_FAILURE;
+  }
+
   for(int i = 0; i != sample_size; i++){
-    
+
     sample += micro->mic_get_val();
   }
   return micro->get_dB_value(sample / sample_size);
@@ -102,11 +106,16 @@ This function calculates the median of a sample of a size pass as a parameter
 @ State:  Done 
 */
 static uint32_t calc_dB_median(Microphone* micro,uint32_t sample_size){
-  uint32_t *sample = (uint32_t*) malloc(sizeof(uint32_t) * sample_size);
-  if (!sample){ // Check of thin provisioning exit if failure
-    EXIT_FAILURE; 
+  
+  if (sample_size <= 0){
+   return EXIT_FAILURE;
   }
 
+  uint32_t *sample = (uint32_t*) malloc(sizeof(uint32_t) * sample_size);
+
+  if (!sample) // Check of thin provisioning exit if failure
+    return EXIT_FAILURE; 
+  
   for(int i = 0; i != sample_size; i++){// Collect all samples in a tab 
     sample[i] = micro->mic_get_val();
   }
@@ -133,17 +142,40 @@ Color RBG: 0 -> LUM_MAX ::
 void display_smiley(uint8_t dB_val, settings_context* settings_ctx)
 {
   // smiley is 0 if db_val-70 < 0 else 1 + int(dB_val / 100)
-  uint8_t smiley = ((dB_val-settings_ctx->seuil_1) < 0) ? 0 : ((dB_val - settings_ctx->seuil_2) < 0) ? 1 : 2;
-  uint8_t r = dB_val * LUM_MAX / dB_MAX; // from 0 to LUM_MAX
-  uint8_t g = LUM_MAX - dB_val * LUM_MAX / dB_MAX; // from LUM_MAX to 0  
+  uint8_t smiley = ((dB_val-settings_ctx->seuil_1) < 0) ? 0 : 
+                   ((dB_val - settings_ctx->seuil_2) < 0) ? 1 : 2;
+  uint8_t g = dB_val * LUM_MAX / dB_MAX; // from 0 to LUM_MAX
+  uint8_t r = LUM_MAX - dB_val * LUM_MAX / dB_MAX; // from LUM_MAX to 0  
   bool led;
+  uint8_t j_fin, i_fin;
+
+
+  // for(uint8_t i = 0; i != SIZE_HALF_TAB; i++){
+  //   for(uint8_t j = 0; j != SIZE_HALF_TAB; j++){
+
+  //     led = tab_eyes[smiley][i + j * SIZE_HALF_TAB];
+  //     //led = tab_mouth[smiley][i + j * SIZE_TAB];
+
+  //     if(!i % 2){
+  //       i_fin = SIZE_TAB-1-i;
+  //     }
+  //     else{
+  //       i_fin = i + j * SIZE_HALF_TAB;
+  //     }
+
+  //     leds[i_fin] = CRGB(r * led, g * led, 0); 
+
+  //   }      
+  // }
+
+
 
   for(uint8_t i = 0; i != MID_NUM_LED; i++ ){
     led = tab_eyes[smiley][i];
     //leds[i + 255 - (i % SIZE_TAB) * (SIZE_TAB)] = CRGB(g * led, r * led, 0);
-    leds[i] = CRGB(g * led, r * led, 0);
+    leds[i] = CRGB(r * led, g * led, 0);
     led = tab_mouth[smiley][i];
-    leds[i + MID_NUM_LED] = CRGB(g * led, r * led, 0);
+    leds[i + MID_NUM_LED] = CRGB(r * led, g * led, 0);
 
   }
   FastLED.show();
@@ -186,7 +218,7 @@ void fill_tab(uint32_t dB_val, settings_context* settings_ctx)
 }  
 
 
-
+// DEPRECATED 
 // fonction d'affchage des jauges Deprecated 
 // void display_gauge()
 // {
@@ -238,7 +270,7 @@ void loop()
 {
   wifi_management(&settings_ctx, &wifi_idle_client_server);
   if (state){
-    display_smiley(calc_dB_average(&micro,50), &settings_ctx);
+    display_smiley(calc_dB_average(&micro,35), &settings_ctx);
   }else{
     fill_tab(calc_dB_average(&micro,5),&settings_ctx);
     display_gauge();

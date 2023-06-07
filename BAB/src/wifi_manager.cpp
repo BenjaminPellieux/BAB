@@ -12,29 +12,28 @@ WiFiServer server(80);
  * @param string_html the string where the web page will be stored, settings_ctx
 */
 static void page_hotspot_string(String *string_html, settings_context settings) {
-  *string_html += "\n";
-  *string_html += "<!DOCTYPE html>";
-  *string_html += "<html>";
-  *string_html += "<head>";
-  *string_html += "  <title>Formulaire de configuration</title>";
-  *string_html += "</head>";
-  *string_html += "<body>";
-  *string_html += "  <h2>Configuration du systeme</h2>";
-  *string_html += "  <form action='/' method='post'>";
-  *string_html += "    <label for='input1'>Ssid :</label>";
+  *string_html += " <!DOCTYPE html> <html> <head> <title>Formulaire de configuration</title>";
+  
+  *string_html += " </head> <script type='text/javascript'> function seuil_value(e){"
+            "  let seuilHaut = parseInt(document.getElementById('seuilHaut').value);"
+            "  let seuilBas = parseInt(document.getElementById('seuilBas').value);"
+            "  if ((e.id === 'seuilHaut') && (seuilHaut <= seuilBas)){document.getElementById('seuilBas').value = document.getElementById('seuilHaut').value;"
+            "  }else if((e.id === 'seuilBas') && (seuilHaut <= seuilBas)){document.getElementById('seuilHaut').value = document.getElementById('seuilBas').value;}}"  
+            "</script> <body> <h2>Configuration du systeme</h2> <form action='/' method='post'> <label for='input1'>Ssid :</label>";
+
   *string_html += "    <input type='text' id='input1' name='input1' value='"; *string_html += settings.wifi_ssid; *string_html += "'><br><br>";
 
   *string_html += "    <label for='input2'>Mot de passe :</label>";
   *string_html += "    <input type='password' id='input2' name='input2' value='"; *string_html += settings.wifi_pass; *string_html += "'><br><br>";
 
   *string_html += "    <label for='seuilHaut'>Seuil haut :</label>";
-  *string_html += "    <input type='range' id='seuilHaut' name='seuilHaut' min='0' max='255' value='"; *string_html += String(settings.seuil_1); *string_html += "'><br><br>";
+  *string_html += "    <input type='range' id='seuilHaut' name='seuilHaut' min='0' max='120' onchange='seuil_value(this)' value='"; *string_html += String(settings.seuil_1); *string_html += "'><br><br>";
 
   *string_html += "    <label for='seuilBas'>Seuil bas :</label>";
-  *string_html += "    <input type='range' id='seuilBas' name='seuilBas' min='0' max='255' value='"; *string_html += String(settings.seuil_2); *string_html += "'><br><br>";
+  *string_html += "    <input type='range' id='seuilBas' name='seuilBas' min='0' max='120' onchange='seuil_value(this)' value='"; *string_html += String(settings.seuil_2); *string_html += "'><br><br>";
 
   *string_html += "    <label for='sensibilite'>Sensibilite :</label>";
-  *string_html += "    <input type='range' id='sensibilite' name='sensibilite' min='0' max='255' value='"; *string_html += String(settings.sensitivity); *string_html += "'><br><br>";
+  *string_html += "    <input type='range' id='sensibilite' name='sensibilite' min='0' max='255' value='"; *string_html += String(settings.sensitivity*128); *string_html += "'><br><br>";
       
   *string_html += "    <label for='luminosite'>Luminosite :</label>";
   *string_html += "    <input type='range' id='luminosite' name='luminosite' min='0' max='255' value='"; *string_html += String(settings.brightness); *string_html += "'><br><br>";
@@ -44,13 +43,8 @@ static void page_hotspot_string(String *string_html, settings_context settings) 
 
   *string_html += "    <label for='wifi_type'>Connect to ssid :</label>";
   *string_html += "    <input type='checkbox' id='connect_type' name='connect_type' "; *string_html += settings.connect_type ? "checked" : ""; *string_html += "><br><br>";
-      
-  *string_html += "    <input type='submit' value='Envoyer'>";
-  *string_html += "  </form>";
-  *string_html += "</body>";
-  *string_html += "</html>";
-  *string_html += "\n";
-  *string_html += "\n";
+  *string_html += "    <input type='submit' value='Envoyer'> </form> </body> <html>";
+  
 }
 
 /**
@@ -500,11 +494,12 @@ static void hotspot_not_connected(settings_context *settings_ctx, idle_client_se
 static void init_settings_ctx(settings_context *settings_ctx) {
   Serial.println("init settings ctx");
   settings_ctx->state_wifi = WIFI_NO_STATE;
-  settings_ctx->seuil_1 = 0;
-  settings_ctx->seuil_2 = 0;
-  settings_ctx->sensitivity = 0;
+  settings_ctx->seuil_1 = 70;
+  settings_ctx->seuil_2 = 100;
+  settings_ctx->sensitivity = 1;
   settings_ctx->brightness = 0;
   settings_ctx->mode_jauge_smiley = 0;
+  
   for (int i = 0; i < MAX_FIELD_SIZE; i++) {
     settings_ctx->wifi_ssid[i] = ssid[i];
     settings_ctx->wifi_pass[i] = password[i];
