@@ -131,14 +131,26 @@ void display_smiley(uint8_t dB_val)
   uint8_t g = LUM_MAX - dB_val * LUM_MAX / dB_MAX; // from LUM_MAX to 0  
   bool led;
 
-  for(uint8_t i = 0; i != MID_NUM_LED; i++ ){
+  for (int i = 0; i < SIZE_TAB; i++) {
+    for (int j = 0; j < SIZE_HALF_TAB; j++) {
+      if (i % 2) {
+        leds[j + (i * 32)] = CRGB(r, g, 0);
+        leds[j + 8 + (i * 32)] = CRGB(r, g, 0);
+      } else {
+        leds[(i * 32) - j] = CRGB(r, g, 0);
+        leds[8 + (i * 32) - j] = CRGB(r, g, 0);
+      }
+    }
+  }
+
+  /*for(uint8_t i = 0; i != MID_NUM_LED; i++ ){
     led = tab_eyes[smiley][i];
     //leds[i + 255 - (i % SIZE_TAB) * (SIZE_TAB)] = CRGB(g * led, r * led, 0);
     leds[i] = CRGB(g * led, r * led, 0);
     led = tab_mouth[smiley][i];
     leds[i + MID_NUM_LED] = CRGB(g * led, r * led, 0);
 
-  }
+  }*/
   FastLED.show();
 }
 
