@@ -23,12 +23,12 @@ uint32_t Microphone::mic_get_val() {
     {
       if (audio_buf[i] != 0)    // Exclude values from other channel
       {
-          cleanBuf[cleanBufIdx] = audio_buf[i] >> 14;
+        cleanBuf[cleanBufIdx] = audio_buf[i] >> 14;
           if (cleanBuf[cleanBufIdx] != 0){
             meanval += cleanBuf[i];
             volCount++;
           }
-          cleanBufIdx++;
+        cleanBufIdx++;
       }
     }
     meanval /= volCount;
@@ -36,7 +36,7 @@ uint32_t Microphone::mic_get_val() {
     // subtract it from all sapmles to get a 'normalized' output
     for (int i=0; i < volCount; i++) 
     {
-        cleanBuf[i] -= meanval;
+      cleanBuf[i] -= meanval;
     }
 
     // find the 'peak to peak' max

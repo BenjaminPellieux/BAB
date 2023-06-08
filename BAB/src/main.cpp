@@ -199,8 +199,8 @@ void fill_tab(uint32_t dB_val, settings_context* settings_ctx)
   bool buf_case;
   bool buf_line[SIZE_TAB] = {0};
   
-  for (int i = 0; i !=  SIZE_TAB; i++) {
-    for (int j = 0; j != SIZE_TAB; j++) {   
+  for (uint8_t i = 0; i !=  SIZE_TAB; i++) {
+    for (uint8_t j = 0; j != SIZE_TAB; j++) {   
       if (i) {
         buf_case = tab_mem[i][j];
         tab_mem[i][j] = buf_line[j];
