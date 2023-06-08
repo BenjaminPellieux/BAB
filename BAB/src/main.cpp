@@ -126,31 +126,21 @@ Color RBG: 0 -> LUM_MAX ::
 void display_smiley(uint8_t dB_val)
 {
   // smiley is 0 if db_val-70 < 0 else 1 + int(dB_val / 100)
-  uint8_t smiley = ((dB_val-70) < 0) ? 0 : 1 + (dB_val / 100);
-  uint8_t r = dB_val * LUM_MAX / dB_MAX; // from 0 to LUM_MAX
-  uint8_t g = LUM_MAX - dB_val * LUM_MAX / dB_MAX; // from LUM_MAX to 0  
+  uint8_t smiley = ((dB_val - 70) < 0) ? 0 : 1 + (dB_val / 100);
+  uint8_t g = dB_val * LUM_MAX / dB_MAX; // from 0 to LUM_MAX
+  uint8_t r = LUM_MAX - dB_val * LUM_MAX / dB_MAX; // from LUM_MAX to 0
   bool led;
 
-  for (int i = 0; i < SIZE_TAB; i++) {
-    for (int j = 0; j < SIZE_HALF_TAB; j++) {
-      if (i % 2) {
-        leds[j + (i * 32)] = CRGB(r, g, 0);
-        leds[j + 8 + (i * 32)] = CRGB(r, g, 0);
-      } else {
-        leds[(i * 32) - j] = CRGB(r, g, 0);
-        leds[8 + (i * 32) - j] = CRGB(r, g, 0);
+  for (int j = 0; j < SIZE_TAB; j++) {
+    for (int i = 0; i < SIZE_TAB; i++) {
+      led = tab_smiley[smiley][i + (j * SIZE_TAB)];
+      if (j % 2) {
+        leds[i + (j * SIZE_TAB)] = CRGB(led * r, led * g, 0);
+      } else { 
+        leds[(15 - i) + (j * SIZE_TAB)] = CRGB(led * r, led * g, 0);
       }
     }
   }
-
-  /*for(uint8_t i = 0; i != MID_NUM_LED; i++ ){
-    led = tab_eyes[smiley][i];
-    //leds[i + 255 - (i % SIZE_TAB) * (SIZE_TAB)] = CRGB(g * led, r * led, 0);
-    leds[i] = CRGB(g * led, r * led, 0);
-    led = tab_mouth[smiley][i];
-    leds[i + MID_NUM_LED] = CRGB(g * led, r * led, 0);
-
-  }*/
   FastLED.show();
 }
 
