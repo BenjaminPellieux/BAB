@@ -46,8 +46,8 @@
     uint16_t brightness; //0 - 255
     uint16_t seuil_1;
     uint16_t seuil_2;
-    float sensitivity; //0 - 255
-    uint8_t  mode_jauge_smiley;
+    float sensitivity; //[0;2]
+    bool  mode_jauge_smiley;
 
     wifi_state_enum state_wifi;
     uint8_t connect_type; //hotspot, wifi
